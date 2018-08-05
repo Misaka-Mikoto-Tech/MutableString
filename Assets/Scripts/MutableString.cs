@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace SDGame
@@ -40,18 +41,6 @@ namespace SDGame
         {
 
             return this;
-        }
-
-        /// <summary>
-        /// 解析格式
-        /// </summary>
-        /// <param name="format"></param>
-        /// <param name="callback">遇到变量定义时回调，参数为第几个参数, 目前不支持格式</param>
-        private void ParseFormat(string format, Action<int> callback)
-        {
-            //int * p = stackalloc int[10];
-           
-            
         }
 
 
@@ -118,7 +107,66 @@ namespace SDGame
                 }
             }
         }
+    } // MutableStringUtil
 
 
+
+    public unsafe static class Formatter
+    {
+        struct Arg
+        {
+            public Type type;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+            public byte[] buff;
+            public object obj;
+        }
+
+        private static Arg[] _args;
+        private static int _argCount;
+
+        static Formatter()
+        {
+            _args = new Arg[10];
+            for (int i = 0, imax = _args.Length; i < imax; i++)
+            {
+                Arg arg = new Arg();
+                _args[i] = arg;
+            }
+        }
+        public static string Format<T0>(string format, T0 arg0)
+        {
+            _argCount = 0;
+            PushArg(arg0);
+            return DoFormat();
+        }
+
+        public static string Format<T0, T1>(string format, T0 arg0, T1 arg1)
+        {
+            _argCount = 0;
+            PushArg(arg0);
+            PushArg(arg1);
+            return DoFormat();
+        }
+
+        private static void PushArg<T>(T arg)
+        {
+            if (typeof(T).IsPrimitive)
+            {
+                fixed(byte * pDst = &_args[_argCount].buff[0])
+                {
+                    Marshal.StructureToPtr<T>(arg, new IntPtr(pDst), false);
+                }
+            }
+            else
+                _args[_argCount].obj = arg;
+
+            _argCount++;
+        }
+
+        private static string DoFormat()
+        {
+            return string.Empty;
+        }
     }
+
 }
