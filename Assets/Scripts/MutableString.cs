@@ -152,9 +152,16 @@ namespace SDGame
         {
             if (typeof(T).IsPrimitive)
             {
-                fixed(byte * pDst = &_args[_argCount].buff[0])
+                int size = Marshal.SizeOf<T>();
+                T _copy = arg;
+                long placeholder = 0;
+                byte* ptr = (byte*)&placeholder;
+                ptr += sizeof(long);
+
+                fixed (byte * pDst = &_args[_argCount].buff[0])
                 {
-                    Marshal.StructureToPtr<T>(arg, new IntPtr(pDst), false);
+                    MutableStringUtil.CopyMemory(new IntPtr(pDst), new IntPtr(ptr), size);
+                    //Marshal.StructureToPtr<T>(arg, new IntPtr(pDst), false); // 这种方式需要 .net 4.6, 废弃
                 }
             }
             else
