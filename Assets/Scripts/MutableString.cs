@@ -148,15 +148,23 @@ namespace SDGame
             return DoFormat();
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        private struct __ForCopy<T>
+        {
+            public byte     placeholder;
+            public T        val;
+        }
+
         private static void PushArg<T>(T arg)
         {
             if (typeof(T).IsPrimitive)
             {
                 int size = Marshal.SizeOf<T>();
-                T _copy = arg;
-                long placeholder = 0;
-                byte* ptr = (byte*)&placeholder;
-                ptr += sizeof(long);
+
+                __ForCopy<T> forcopy;
+                forcopy.val = arg;
+                byte* ptr = &forcopy.placeholder;
+                ptr += sizeof(byte);
 
                 fixed (byte * pDst = &_args[_argCount].buff[0])
                 {
